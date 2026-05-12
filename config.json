@@ -1,0 +1,18 @@
+{
+  "infra_patterns": [
+    "hermes",
+    "openclaw",
+    "model-switcher",
+    "mission-control",
+    "mihomo",
+    "nginx",
+    "invest"
+  ],
+  "service_urls": {
+    "web3-explainer": "/",
+    "model-switcher": "/model/",
+    "mission-control": "/manage/",
+    "investment-portfolio-analyzer": "/invest/",
+    "mihomo": "/proxy/"
+  }
+}
