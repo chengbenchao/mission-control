@@ -326,6 +326,63 @@ a.svc-name:hover { color: var(--gold); }
 }
 .modal .close:hover { border-color: var(--red); color: var(--red); }
 
+/* ─── Token Dialog ─── */
+.token-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(8,11,18,.92);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+}
+.token-overlay.active { display: flex; animation: fadeIn .2s ease; }
+.token-panel {
+  width: min(420px, calc(100vw - 32px));
+  background: var(--bg-card);
+  border: 1px solid var(--border-active);
+  border-radius: var(--radius);
+  padding: 28px;
+  box-shadow: var(--shadow-lg);
+  animation: modalIn .25s cubic-bezier(.4,0,.2,1);
+}
+.token-panel h3 {
+  font-family: var(--font-display);
+  font-size: 18px; font-weight: 600; font-style: italic;
+  color: var(--text); margin-bottom: 6px;
+}
+.token-panel p {
+  font-size: 12px; line-height: 1.7; color: var(--text-3);
+  margin-bottom: 18px;
+}
+.token-field {
+  width: 100%; height: 42px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 0 12px;
+  outline: none;
+}
+.token-field:focus { border-color: var(--gold); }
+.token-actions { display: flex; justify-content: flex-end; margin-top: 14px; }
+.token-submit {
+  border: 1px solid rgba(196,163,74,.35);
+  border-radius: var(--radius-sm);
+  background: rgba(196,163,74,.12);
+  color: var(--gold);
+  font-family: var(--font-body);
+  font-size: 12px; font-weight: 600;
+  padding: 9px 16px;
+  cursor: pointer;
+}
+.token-submit:hover { border-color: var(--gold); background: rgba(196,163,74,.18); }
+.token-error {
+  min-height: 18px;
+  margin-top: 8px;
+  color: var(--red);
+  font-size: 12px;
+}
+
 /* ─── Toast ─── */
 .toast-root {
   position: fixed; bottom: 28px; right: 28px; z-index: 200;
@@ -405,12 +462,95 @@ a.svc-name:hover { color: var(--gold); }
 <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
   <div class="modal" id="modalContent"></div>
 </div>
+<div class="token-overlay" id="tokenOverlay">
+  <form class="token-panel" id="tokenForm">
+    <h3>访问令牌</h3>
+    <p>输入一次后会保存在当前浏览器。</p>
+    <input class="token-field" id="tokenInput" type="password" autocomplete="current-password" placeholder="Mission Control token">
+    <div class="token-error" id="tokenError"></div>
+    <div class="token-actions">
+      <button class="token-submit" type="submit">进入控制台</button>
+    </div>
+  </form>
+</div>
 <div class="toast-root" id="toastRoot"></div>
 
 <script>
-const API = window.location.pathname.startsWith('/manage') ? '/manage' : '';
+const API = getApiBase();
+const TOKEN_KEY = 'missionControlToken';
+let authToken = localStorage.getItem(TOKEN_KEY) || '';
+let tokenPrompt = null;
 
-async function fetchJSON(url) { const r = await fetch(url); return r.json(); }
+function getApiBase() {
+  let path = window.location.pathname || '/';
+  if (path === '/') return '';
+  if (path.endsWith('/')) path = path.slice(0, -1);
+  const last = path.split('/').pop() || '';
+  if (last.includes('.')) path = path.slice(0, path.lastIndexOf('/'));
+  return path === '/' ? '' : path;
+}
+
+async function requestToken() {
+  if (tokenPrompt) return tokenPrompt;
+  tokenPrompt = new Promise(resolve => {
+    const overlay = document.getElementById('tokenOverlay');
+    const form = document.getElementById('tokenForm');
+    const input = document.getElementById('tokenInput');
+    const err = document.getElementById('tokenError');
+
+    const submit = event => {
+      event.preventDefault();
+      const value = input.value.trim();
+      if (!value) {
+        err.textContent = '请输入 token';
+        input.focus();
+        return;
+      }
+      authToken = value;
+      localStorage.setItem(TOKEN_KEY, authToken);
+      overlay.classList.remove('active');
+      form.removeEventListener('submit', submit);
+      resolve(authToken);
+    };
+
+    err.textContent = '';
+    input.value = authToken || '';
+    overlay.classList.add('active');
+    form.addEventListener('submit', submit);
+    requestAnimationFrame(() => input.focus());
+  }).finally(() => { tokenPrompt = null; });
+  return tokenPrompt;
+}
+
+function authHeaders(headers) {
+  const h = new Headers(headers || {});
+  if (authToken) h.set('Authorization', `Bearer ${authToken}`);
+  return h;
+}
+
+async function fetchWithAuth(url, options = {}, retry = true) {
+  const r = await fetch(url, { ...options, headers: authHeaders(options.headers) });
+  if (r.status === 401 && retry) {
+    authToken = '';
+    localStorage.removeItem(TOKEN_KEY);
+    const token = await requestToken();
+    if (token) return fetchWithAuth(url, options, false);
+  }
+  return r;
+}
+
+async function fetchJSON(url) {
+  const r = await fetchWithAuth(url);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function fetchText(url) {
+  const r = await fetchWithAuth(url);
+  if (!r.ok) throw new Error(await r.text());
+  return r.text();
+}
+
 function fmtMB(mb) { return mb ? (mb < 1000 ? `${mb}MB` : `${(mb/1024).toFixed(1)}GB`) : '—'; }
 function fmtUptime(s) {
   if (!s || s==='unknown') return '—';
@@ -420,7 +560,7 @@ function fmtUptime(s) {
 
 async function loadResources() {
   try { return await fetchJSON(`${API}/api/resources`); }
-  catch(e) { return {cpu:0,ram:{used:0,total:7.7,percent:0},disk:{used:0,total:40,percent:0},uptime:0}; }
+  catch(e) { return {cpu:0,ram:{used:0,total:0,percent:0},disk:{used:0,total:0,percent:0},uptime:0}; }
 }
 async function loadServices() {
   try { return await fetchJSON(`${API}/api/services`); }
@@ -473,8 +613,8 @@ function renderStats(res) {
 
 function renderServices(svcs) {
   const { infra, sys } = splitServices(svcs);
-  document.getElementById('infraGrid').innerHTML = infra.map(cardHTML).join('');
-  document.getElementById('sysGrid').innerHTML = sys.map(cardHTML).join('');
+  document.getElementById('infraGrid').replaceChildren(...infra.map(createCard));
+  document.getElementById('sysGrid').replaceChildren(...sys.map(createCard));
   document.getElementById('infraCount').textContent = infra.length;
   document.getElementById('sysCount').textContent = sys.length;
   document.getElementById('refreshLabel').textContent = `${svcs.length} 个节点 · 1分钟轮询`;
@@ -487,31 +627,93 @@ function renderServices(svcs) {
   });
 }
 
-function cardHTML(s) {
+function resolveServiceUrl(s) {
+  if (!s.url) return '';
+  try {
+    if (/^https?:\/\//i.test(s.url)) return s.url;
+    if (s.url.startsWith('//')) return `${window.location.protocol}${s.url}`;
+    if (s.port) {
+      const url = new URL(s.url, `${window.location.protocol}//${window.location.hostname}:${s.port}/`);
+      return url.href;
+    }
+    return new URL(s.url, `${window.location.origin}/`).href;
+  } catch(e) {
+    return '';
+  }
+}
+
+function createCard(s) {
   const cls = s.status==='healthy'?'ok':s.status==='error'?'err':'warn';
-  const nameEl = s.url
-    ? `<a href="${s.url}" class="svc-name" target="_blank" onclick="event.stopPropagation()">${s.name}</a>`
-    : `<span class="svc-name">${s.name}</span>`;
+  const href = resolveServiceUrl(s);
   const hasCtl = s.type === 'systemd';
 
-  return `<div class="svc-card ${cls}" onclick="showLogs('${s.name}')">
-    <div class="svc-top">
-      <div class="svc-dot"></div>
-      ${nameEl}
-    </div>
-    <div class="svc-body">
-      <span><span class="key">端口</span> <span class="val">${s.port||'—'}</span></span>
-      <span><span class="key">PID</span> <span class="val">${s.pid||'—'}</span></span>
-      <span><span class="key">内存</span> <span class="val">${fmtMB(s.memory)}</span></span>
-    </div>
-    <div class="svc-actions" onclick="event.stopPropagation()">
-      <button class="logs" onclick="event.stopPropagation();showLogs('${s.name}')">日志</button>
-      ${hasCtl ? `
-      <button class="restart" onclick="ctlService('${s.name}','restart')">重启</button>
-      <button class="stop" onclick="ctlService('${s.name}','stop')">停止</button>
-      <button class="start" onclick="ctlService('${s.name}','start')">启动</button>` : ''}
-    </div>
-  </div>`;
+  const card = document.createElement('div');
+  card.className = `svc-card ${cls}`;
+  card.addEventListener('click', () => {
+    if (href) window.open(href, '_blank', 'noopener,noreferrer');
+    else showLogs(s.name);
+  });
+
+  const top = document.createElement('div');
+  top.className = 'svc-top';
+  const dot = document.createElement('div');
+  dot.className = 'svc-dot';
+  const nameEl = document.createElement(href ? 'a' : 'span');
+  nameEl.className = 'svc-name';
+  nameEl.textContent = s.name;
+  if (href) {
+    nameEl.href = href;
+    nameEl.target = '_blank';
+    nameEl.rel = 'noopener noreferrer';
+    nameEl.addEventListener('click', event => event.stopPropagation());
+  }
+  top.append(dot, nameEl);
+
+  const body = document.createElement('div');
+  body.className = 'svc-body';
+  appendMeta(body, '端口', s.port || '—');
+  appendMeta(body, 'PID', s.pid || '—');
+  appendMeta(body, '内存', fmtMB(s.memory));
+
+  const actions = document.createElement('div');
+  actions.className = 'svc-actions';
+  actions.addEventListener('click', event => event.stopPropagation());
+  actions.append(actionButton('logs', '日志', () => showLogs(s.name)));
+  if (hasCtl) {
+    if (s.status === 'healthy') {
+      actions.append(actionButton('restart', '重启', () => ctlService(s.name, 'restart')));
+      actions.append(actionButton('stop', '停止', () => ctlService(s.name, 'stop')));
+    } else {
+      actions.append(actionButton('start', '启动', () => ctlService(s.name, 'start')));
+    }
+  }
+
+  card.append(top, body, actions);
+  return card;
+}
+
+function appendMeta(parent, key, value) {
+  const item = document.createElement('span');
+  const keyEl = document.createElement('span');
+  keyEl.className = 'key';
+  keyEl.textContent = key;
+  const valEl = document.createElement('span');
+  valEl.className = 'val';
+  valEl.textContent = value;
+  item.append(keyEl, ' ', valEl);
+  parent.appendChild(item);
+}
+
+function actionButton(cls, label, fn) {
+  const btn = document.createElement('button');
+  btn.className = cls;
+  btn.type = 'button';
+  btn.textContent = label;
+  btn.addEventListener('click', event => {
+    event.stopPropagation();
+    fn();
+  });
+  return btn;
 }
 
 function toggleSystem() {
@@ -522,22 +724,34 @@ function toggleSystem() {
 }
 
 async function ctlService(name, action) {
-  const r = await fetch(`${API}/api/ctl`, {
+  const r = await fetchWithAuth(`${API}/api/ctl`, {
     method:'POST', headers:{'Content-Type':'application/json'},
     body:JSON.stringify({svc:name,action})
   });
-  const d = await r.json();
-  toast(d.ok ? `${name} ${action} 成功` : d.error, d.ok);
-  setTimeout(refresh, 1200);
+  const text = await r.text();
+  let d = {};
+  try { d = JSON.parse(text || '{}'); }
+  catch(e) { d = {ok:false, error:text || r.statusText}; }
+  const ok = r.ok && d.ok;
+  toast(ok ? `${name} ${action} 成功` : (d.error || `HTTP ${r.status}`), ok);
+  if (ok) setTimeout(refresh, 1200);
 }
 
 async function showLogs(name) {
-  const r = await fetch(`${API}/api/logs?svc=${name}`);
-  const logs = await r.text();
-  document.getElementById('modalContent').innerHTML = `
-    <button class="close" onclick="closeModal()">✕</button>
-    <h3>${name} &nbsp;/&nbsp; 日志</h3>
-    <pre>${logs || '— 无输出 —'}</pre>`;
+  let logs = '';
+  try { logs = await fetchText(`${API}/api/logs?svc=${encodeURIComponent(name)}`); }
+  catch(e) { logs = e.message || '日志读取失败'; }
+  const modal = document.getElementById('modalContent');
+  const close = document.createElement('button');
+  close.className = 'close';
+  close.type = 'button';
+  close.textContent = '✕';
+  close.addEventListener('click', closeModal);
+  const title = document.createElement('h3');
+  title.textContent = `${name} / 日志`;
+  const pre = document.createElement('pre');
+  pre.textContent = logs || '— 无输出 —';
+  modal.replaceChildren(close, title, pre);
   document.getElementById('modalOverlay').classList.add('active');
 }
 

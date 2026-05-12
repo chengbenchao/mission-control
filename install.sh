@@ -28,19 +28,34 @@ if ! systemctl --user --quiet is-active default.target 2>/dev/null; then
     loginctl enable-linger "$(whoami)" 2>/dev/null || true
 fi
 
-# ── 3. Create default config if missing ─────────────────────
-if [ ! -f "$PROJECT_DIR/config.json" ]; then
-    echo "▸ Creating default config.json..."
-    cat > "$PROJECT_DIR/config.json" <<'EOF'
+# ── 3. Create machine-local config if missing ───────────────
+LOCAL_CONFIG="$PROJECT_DIR/config.local.json"
+if [ ! -f "$LOCAL_CONFIG" ]; then
+    echo "▸ Creating machine-local config.local.json..."
+    if [ -f "$PROJECT_DIR/config.example.json" ]; then
+        cp "$PROJECT_DIR/config.example.json" "$LOCAL_CONFIG"
+    else
+        cat > "$LOCAL_CONFIG" <<'EOF'
 {
   "infra_patterns": [],
   "service_urls": {}
 }
 EOF
-    echo "   Edit $PROJECT_DIR/config.json to add infra patterns and URLs."
+    fi
+    echo "   Edit $LOCAL_CONFIG to add infra patterns and URLs for this machine."
 fi
 
-# ── 4. Install systemd user service ─────────────────────────
+# ── 4. Create auth token ────────────────────────────────────
+TOKEN_FILE="${MISSION_CONTROL_TOKEN_FILE:-$HOME/.config/mission-control/token}"
+SERVICE_BASE_PATH="${MISSION_CONTROL_BASE_PATH:-${BASE_PATH:-}}"
+mkdir -p "$(dirname "$TOKEN_FILE")"
+if [ ! -s "$TOKEN_FILE" ]; then
+    echo "▸ Creating auth token..."
+    (umask 077; "$PYTHON" -c 'import secrets; print(secrets.token_urlsafe(32))' > "$TOKEN_FILE")
+fi
+echo "▸ Auth token file: $TOKEN_FILE"
+
+# ── 5. Install systemd user service ─────────────────────────
 SERVICE_FILE="$HOME/.config/systemd/user/mission-control.service"
 mkdir -p "$(dirname "$SERVICE_FILE")"
 
@@ -56,6 +71,8 @@ WorkingDirectory=$PROJECT_DIR
 ExecStart=$PYTHON server.py
 Environment=PORT=${PORT:-8880}
 Environment=HOST=127.0.0.1
+Environment="MISSION_CONTROL_TOKEN_FILE=$TOKEN_FILE"
+Environment="MISSION_CONTROL_BASE_PATH=$SERVICE_BASE_PATH"
 Restart=on-failure
 RestartSec=5
 
@@ -65,7 +82,7 @@ SERVICEOF
 
 echo "▸ Service file written: $SERVICE_FILE"
 
-# ── 5. Enable and start ─────────────────────────────────────
+# ── 6. Enable and start ─────────────────────────────────────
 systemctl --user daemon-reload
 systemctl --user enable mission-control.service
 systemctl --user restart mission-control.service
@@ -73,19 +90,21 @@ systemctl --user restart mission-control.service
 sleep 1
 if systemctl --user is-active mission-control.service &>/dev/null; then
     echo "✓ Mission Control running on http://127.0.0.1:${PORT:-8880}"
+    echo "  Login token: $(cat "$TOKEN_FILE")"
 else
     echo "✗ Failed to start. Check: journalctl --user -u mission-control.service"
     exit 1
 fi
 
-# ── 6. Nginx hint ───────────────────────────────────────────
+# ── 7. Nginx hint ───────────────────────────────────────────
+PORT_VAL="${PORT:-8880}"
 echo ""
 echo "To expose via nginx, add to your server block:"
 echo ""
 echo "    location /manage/ {"
-echo "        proxy_pass http://127.0.0.1:${PORT:-8880}/;"
+echo "        proxy_pass http://127.0.0.1:${PORT_VAL}/;"
 echo "        proxy_set_header Host \$host;"
 echo "        proxy_set_header X-Forwarded-Prefix /manage;"
 echo "    }"
 echo ""
-echo "Then configure config.json service_urls to link services."
+echo "Then configure config.local.json service_urls to link services on this machine."
