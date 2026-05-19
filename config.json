@@ -6,13 +6,15 @@
     "mission-control",
     "mihomo",
     "nginx",
-    "invest"
+    "invest",
+    "meigu"
   ],
   "service_urls": {
     "web3-explainer": "/",
     "model-switcher": "/model/",
     "mission-control": "/manage/",
     "investment-portfolio-analyzer": "/invest/",
-    "mihomo": "/proxy/"
+    "mihomo": "/proxy/",
+    "meigu": "/meigu/"
   }
 }

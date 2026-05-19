@@ -60,24 +60,29 @@ def run(*args, timeout=5):
 
 
 def get_systemd_services():
-    """Discover all running systemd user services."""
-    out = run("systemctl", "--user", "list-units", "--type=service",
-              "--state=running", "--no-legend", "--no-pager")
+    """Discover all running systemd services (user + system)."""
     services = {}
-    for line in out.split("\n"):
-        line = line.strip()
-        if not line:
-            continue
-        name = line.split()[0]
-        if name.endswith(".service"):
-            svc = name[:-8]  # strip .service
-            services[svc] = {"type": "systemd", "name": svc}
+    for scope in ["--user", "--system"]:
+        out = run("systemctl", scope, "list-units", "--type=service",
+                  "--state=running", "--no-legend", "--no-pager")
+        for line in out.split("\n"):
+            line = line.strip()
+            if not line:
+                continue
+            name = line.split()[0]
+            if name.endswith(".service"):
+                svc = name[:-8]  # strip .service
+                # Prefer user service if duplicate
+                if svc not in services:
+                    services[svc] = {"type": "systemd", "name": svc, "scope": scope}
     return services
 
 
 def get_systemd_mainpid(svc_name):
-    """Get MainPID for a systemd service."""
-    out = run("systemctl", "--user", "show", f"{svc_name}.service",
+    """Get MainPID for a systemd service. Tries user first, then system."""
+    services_db = get_systemd_services()
+    scope = services_db.get(svc_name, {}).get("scope", "--user")
+    out = run("systemctl", scope, "show", f"{svc_name}.service",
               "--property=MainPID")
     if out and "=" in out:
         pid = out.split("=")[-1]
