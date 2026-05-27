@@ -1,6 +1,6 @@
 {
-  "_comment": "Mission Control 配置文件。base_url 留空则使用相对路径；infra_patterns 支持正则，命中的服务显示在「核心服务」区。",
-  "base_url": "",
+  "_comment": "base_url 设为公网地址，服务卡片会同时显示内网相对路径和公网完整链接。",
+  "base_url": "http://103.127.218.137",
   "infra_patterns": ["nginx", "openclaw", "hermes-gateway"],
   "service_urls": {
     "mission-control":               "/manage/",
@@ -12,44 +12,15 @@
     "mission-control":               8880,
     "model-switcher":                8899,
     "investment-portfolio-analyzer": 8002,
-    "hermes-panel":                  8890
+    "hermes-panel":                  8890,
+    "openclaw-gateway":              18780
   },
   "static_sites": [
-    {
-      "name":  "web3-explainer",
-      "url":   "/",
-      "desc":  "Web3 概念解析站",
-      "dir":   "/var/www/web3-explainer"
-    },
-    {
-      "name":  "quant-dashboard",
-      "url":   "/quant/",
-      "desc":  "量化交易仪表盘",
-      "dir":   "/var/www/quant"
-    },
-    {
-      "name":  "llm-concepts",
-      "url":   "/llm/",
-      "desc":  "LLM Concepts 100",
-      "dir":   "/var/www/llm"
-    },
-    {
-      "name":  "ai-news",
-      "url":   "/ai/",
-      "desc":  "AI 资讯",
-      "dir":   "/var/www/ai-news"
-    },
-    {
-      "name":  "ai-invest",
-      "url":   "/A/",
-      "desc":  "AI 投资工具",
-      "dir":   "/var/www/ai-invest"
-    },
-    {
-      "name":  "yacd-proxy",
-      "url":   "/proxy/",
-      "desc":  "代理控制面板（yacd）",
-      "dir":   "/opt/yacd"
-    }
+    {"name": "web3-explainer", "url": "/",        "desc": "Web3 知识库",    "dir": "/var/www/web3-explainer"},
+    {"name": "llm-concepts",   "url": "/llm/",    "desc": "LLM 100 概念",   "dir": "/var/www/llm"},
+    {"name": "ai-invest",      "url": "/A/",      "desc": "AI 投资面板",    "dir": "/var/www/ai-invest"},
+    {"name": "ai-news",        "url": "/ai/",     "desc": "AI 新闻聚合",    "dir": "/var/www/ai-news"},
+    {"name": "quant",          "url": "/quant/",  "desc": "量化分析面板",   "dir": "/var/www/quant"},
+    {"name": "yacd-proxy",     "url": "/proxy/",  "desc": "代理控制面板",   "dir": "/opt/yacd"}
   ]
 }
