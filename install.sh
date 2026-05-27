@@ -60,6 +60,17 @@ fi
 MC_SESSION_SECRET="$(openssl rand -hex 32 2>/dev/null || python3 -c 'import secrets; print(secrets.token_hex(32))')"
 echo "▸ Session secret generated."
 
+# ── Webhook (optional) ──────────────────────────────────────
+MC_WEBHOOK_URL="${MC_WEBHOOK_URL:-}"
+MC_WEBHOOK_TYPE="${MC_WEBHOOK_TYPE:-feishu}"
+if [ -z "$MC_WEBHOOK_URL" ]; then
+    read -r -p "▸ Webhook URL (飞书/钉钉/企微，留空跳过): " MC_WEBHOOK_URL || true
+    if [ -n "$MC_WEBHOOK_URL" ]; then
+        read -r -p "▸ Webhook type [feishu/dingtalk/wecom/custom] (default: feishu): " _wt || true
+        MC_WEBHOOK_TYPE="${_wt:-feishu}"
+    fi
+fi
+
 # ── 4. Create default config if missing ─────────────────────
 if [ ! -f "$PROJECT_DIR/config.json" ]; then
     echo "▸ Creating default config.json..."
@@ -91,6 +102,8 @@ Environment=HOST=127.0.0.1
 Environment=MC_USERNAME=${MC_USERNAME}
 Environment=MC_PASSWORD=${MC_PASSWORD}
 Environment=MC_SESSION_SECRET=${MC_SESSION_SECRET}
+$([ -n "$MC_WEBHOOK_URL" ] && echo "Environment=MC_WEBHOOK_URL=${MC_WEBHOOK_URL}")
+$([ -n "$MC_WEBHOOK_URL" ] && echo "Environment=MC_WEBHOOK_TYPE=${MC_WEBHOOK_TYPE}")
 Restart=on-failure
 RestartSec=5
 

@@ -58,6 +58,20 @@ HOST = os.environ.get("HOST", "127.0.0.1")
 PROJECT_DIR = Path(__file__).resolve().parent
 CONFIG_PATH = Path(os.environ.get("CONFIG", str(PROJECT_DIR / "config.json")))
 
+# CORS: set MC_ALLOWED_ORIGIN to your domain (e.g. "https://example.com").
+# Leave empty to deny cross-origin requests (recommended for production).
+# Set to "*" only for local development.
+ALLOWED_ORIGIN = os.environ.get("MC_ALLOWED_ORIGIN", "").strip()
+
+# Processes to skip when listing orphaned port listeners (low-level system daemons).
+# Comma-separated, matches process comm name exactly. Override with MC_SKIP_PROCS.
+_default_skip = "sshd,systemd,systemd-resolved,systemd-networkd,agetty,cron,crond"
+SKIP_PROCS = set(
+    p.strip() for p in
+    os.environ.get("MC_SKIP_PROCS", _default_skip).split(",")
+    if p.strip()
+)
+
 # ═══════════════════════════════════════════════════════════════
 #  Auth — no hardcoded defaults for USERNAME / PASSWORD
 # ═══════════════════════════════════════════════════════════════
@@ -65,10 +79,10 @@ CONFIG_PATH = Path(os.environ.get("CONFIG", str(PROJECT_DIR / "config.json")))
 SESSION_SECRET = os.environ.get("MC_SESSION_SECRET", secrets.token_hex(32)).encode()
 SESSION_TTL = 86400  # 24 hours
 
-USERNAME = os.environ.get("MC_USERNAME", "").strip()
-PASSWORD = os.environ.get("MC_PASSWORD", "").strip()
+_raw_username = os.environ.get("MC_USERNAME", "").strip()
+_raw_password = os.environ.get("MC_PASSWORD", "").strip()
 
-if not USERNAME or not PASSWORD:
+if not _raw_username or not _raw_password:
     log.error(
         "MC_USERNAME and MC_PASSWORD must be set via environment variables.\n"
         "Example:\n"
@@ -79,6 +93,14 @@ if not USERNAME or not PASSWORD:
         "  Environment=MC_PASSWORD=yourpassword"
     )
     sys.exit(1)
+
+# Hash credentials at startup — plaintext never lives in memory after this point.
+# Using SHA-256 (fast enough for server-side compare; bcrypt not in stdlib).
+_SALT = SESSION_SECRET  # reuse session secret as HMAC key for credential hashing
+USERNAME_HASH = hmac.new(_SALT, _raw_username.encode(), hashlib.sha256).hexdigest()
+PASSWORD_HASH = hmac.new(_SALT, _raw_password.encode(), hashlib.sha256).hexdigest()
+USERNAME = _raw_username   # kept only for log display (not for auth comparison)
+del _raw_username, _raw_password  # scrub plaintext from memory
 
 # In-memory session store: {token: expiry_timestamp}
 _sessions: dict[str, float] = {}
@@ -378,11 +400,8 @@ def get_all_services():
         if out:
             proc_name = out.strip()
 
-        if proc_name in ("sshd", "systemd", "systemd-", "mihomo"):
-            if proc_name == "mihomo" and port in (9090,):
-                pass
-            elif port < 1024:
-                continue
+        if proc_name in SKIP_PROCS and port < 1024:
+            continue
 
         name = proc_name or f"pid-{pid}"
         is_infra = any(re.search(pat, name, re.IGNORECASE) for pat in infra_patterns)
@@ -694,7 +713,9 @@ class Handler(BaseHTTPRequestHandler):
                 self._send({"ok": False, "error": "请输入用户名和密码"}, 400)
                 return
 
-            if not hmac.compare_digest(username, USERNAME) or not hmac.compare_digest(password, PASSWORD):
+            user_hash = hmac.new(_SALT, username.encode(), hashlib.sha256).hexdigest()
+            pass_hash = hmac.new(_SALT, password.encode(), hashlib.sha256).hexdigest()
+            if not hmac.compare_digest(user_hash, USERNAME_HASH) or not hmac.compare_digest(pass_hash, PASSWORD_HASH):
                 _rate_limit_record(ip)
                 log.warning(f"Failed login attempt from {ip} for user '{username}'")
                 self._send({"ok": False, "error": "用户名或密码错误"}, 401)
@@ -733,10 +754,14 @@ class Handler(BaseHTTPRequestHandler):
             self._send({"error": "not found"}, 404)
 
     def do_OPTIONS(self):
+        origin = self.headers.get("Origin", "")
+        allowed = ALLOWED_ORIGIN
         self.send_response(200)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        if allowed == "*" or origin == allowed:
+            self.send_header("Access-Control-Allow-Origin", allowed if allowed else origin)
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Access-Control-Allow-Credentials", "true")
         self.end_headers()
 
 
