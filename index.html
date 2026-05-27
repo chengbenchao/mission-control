@@ -418,7 +418,7 @@ a.svc-name:hover { color: var(--gold); }
   <div class="svc-grid" id="infraGrid"></div>
 
   <button class="sys-toggle" id="sysToggle" onclick="toggleSystem()">
-    <span class="arrow">▸</span> 系统服务
+    <span class="arrow">▸</span> 基础设施
     <span class="section-count" id="sysCount">—</span>
   </button>
   <div class="svc-grid sys-grid" id="sysGrid"></div>
@@ -452,7 +452,8 @@ async function loadServices() {
 function splitServices(svcs) {
   const infra = [], sys = [];
   for (const s of svcs) {
-    if (s.is_infra) { infra.push(s); }
+    // Web 项目（有 URL）放主区；无 URL 的基础设施放折叠区
+    if (s.url || s.full_url) { infra.push(s); }
     else { sys.push(s); }
   }
   return { infra, sys };
