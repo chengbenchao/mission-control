@@ -1,6 +1,6 @@
 {
-  "_comment": "base_url 设为公网地址，服务卡片会同时显示内网相对路径和公网完整链接。",
-  "base_url": "http://124.174.35.205",
+  "_comment": "base_url 留空，由环境变量 MC_BASE_URL 注入（如 MC_BASE_URL=http://1.2.3.4）。",
+  "base_url": "",
   "infra_patterns": ["nginx", "openclaw", "hermes-gateway"],
   "service_urls": {
     "mission-control":               "/manage/",

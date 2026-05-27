@@ -346,7 +346,7 @@ def get_all_services():
     infra_patterns = cfg.get("infra_patterns", [])
     url_map = cfg.get("service_urls", {})
     port_map = cfg.get("service_ports", {})   # manual port hints from config
-    base_url = cfg.get("base_url", "").rstrip("/")
+    base_url = (os.environ.get("MC_BASE_URL") or cfg.get("base_url", "")).rstrip("/")
 
     def full_url(path):
         """Combine base_url with a relative path."""
