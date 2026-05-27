@@ -210,20 +210,19 @@ def run(*args, timeout=5):
 
 
 def get_systemd_services():
-    """Discover all running systemd services (user + system)."""
+    """Discover all running systemd user services (system-level excluded)."""
     services = {}
-    for scope in ["--user", "--system"]:
-        out = run("systemctl", scope, "list-units", "--type=service",
-                  "--state=running", "--no-legend", "--no-pager")
-        for line in out.split("\n"):
-            line = line.strip()
-            if not line:
-                continue
-            name = line.split()[0]
-            if name.endswith(".service"):
-                svc = name[:-8]
-                if svc not in services:
-                    services[svc] = {"type": "systemd", "name": svc, "scope": scope}
+    out = run("systemctl", "--user", "list-units", "--type=service",
+              "--state=running", "--no-legend", "--no-pager")
+    for line in out.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        name = line.split()[0]
+        if name.endswith(".service"):
+            svc = name[:-8]
+            if svc not in services:
+                services[svc] = {"type": "systemd", "name": svc, "scope": "--user"}
     return services
 
 
@@ -537,18 +536,16 @@ def get_resources():
 # ═══════════════════════════════════════════════════════════════
 
 def get_logs(svc_name, lines=100):
-    """Get recent journalctl logs for any systemd service (user or system)."""
-    # Try user scope first, then system
-    for scope in ("--user", "--system"):
-        out = run("journalctl", scope, "-u", f"{svc_name}.service",
-                  "-n", str(lines), "--no-pager", timeout=8)
-        if out and "No entries" not in out and "Failed to" not in out:
-            return out[-8000:]
+    """Get recent journalctl logs for a user-scope systemd service."""
+    out = run("journalctl", "--user", "-u", f"{svc_name}.service",
+              "-n", str(lines), "--no-pager", timeout=8)
+    if out and "No entries" not in out and "Failed to" not in out:
+        return out[-8000:]
     return "No logs available"
 
 
 def control_service(svc_name, action):
-    """Start/stop/restart a systemd service (tries user then system scope)."""
+    """Start/stop/restart a user-scope systemd service."""
     if action not in ("start", "stop", "restart"):
         return {"ok": False, "error": f"Unknown action: {action}"}
 
@@ -556,17 +553,15 @@ def control_service(svc_name, action):
     if not re.match(r"^[\w@:.\\-]+$", svc_name):
         return {"ok": False, "error": "Invalid service name"}
 
-    # Try user scope first, then system scope
-    for scope in ("--user", "--system"):
-        result = subprocess.run(
-            ["systemctl", scope, action, f"{svc_name}.service"],
-            capture_output=True, text=True, timeout=15
-        )
-        if result.returncode == 0:
-            log.info(f"Service control: {action} {svc_name} (scope={scope}) OK")
-            return {"ok": True, "action": action, "service": svc_name, "scope": scope}
+    result = subprocess.run(
+        ["systemctl", "--user", action, f"{svc_name}.service"],
+        capture_output=True, text=True, timeout=15
+    )
+    if result.returncode == 0:
+        log.info(f"Service control: {action} {svc_name} (user scope) OK")
+        return {"ok": True, "action": action, "service": svc_name, "scope": "--user"}
 
-    log.warning(f"Service control: {action} {svc_name} failed on both user and system scope")
+    log.warning(f"Service control: {action} {svc_name} failed")
     return {"ok": False, "error": f"Failed to {action} {svc_name}", "service": svc_name}
 
 
