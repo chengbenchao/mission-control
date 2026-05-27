@@ -1,6 +1,6 @@
 {
   "_comment": "base_url 设为公网地址，服务卡片会同时显示内网相对路径和公网完整链接。",
-  "base_url": "http://103.127.218.137",
+  "base_url": "http://124.174.35.205",
   "infra_patterns": ["nginx", "openclaw", "hermes-gateway"],
   "service_urls": {
     "mission-control":               "/manage/",
