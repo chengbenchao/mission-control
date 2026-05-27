@@ -1,6 +1,8 @@
 {
+  "base_url": "http://124.174.35.205",
   "infra_patterns": [
     "hermes",
+    "hermes-panel",
     "openclaw",
     "model-switcher",
     "mission-control",
@@ -10,11 +12,32 @@
     "meigu"
   ],
   "service_urls": {
+    "hermes-panel": "/hermes-panel/",
     "web3-explainer": "/",
+    "llm-concepts": "/llm/",
+    "ai-invest": "/A/",
+    "ai-news": "/ai/",
+    "quant": "/quant/",
     "model-switcher": "/model/",
     "mission-control": "/manage/",
     "investment-portfolio-analyzer": "/invest/",
     "mihomo": "/proxy/",
     "meigu": "/meigu/"
-  }
+  },
+  "service_ports": {
+    "hermes-panel": 8890,
+    "model-switcher": 8899,
+    "investment-portfolio-analyzer": 8002,
+    "meigu": 8003,
+    "mission-control": 8880,
+    "openclaw-gateway": 18780,
+    "mihomo": 9090
+  },
+  "static_sites": [
+    {"name": "web3-explainer", "url": "/",        "desc": "Web3 知识库",      "dir": "/var/www/web3-explainer"},
+    {"name": "llm-concepts",   "url": "/llm/",    "desc": "LLM 100 概念",     "dir": "/var/www/llm"},
+    {"name": "ai-invest",      "url": "/A/",      "desc": "AI 投资面板",      "dir": "/var/www/ai-invest"},
+    {"name": "ai-news",        "url": "/ai/",     "desc": "AI 新闻聚合",      "dir": "/var/www/ai-news"},
+    {"name": "quant",          "url": "/quant/",  "desc": "量化分析面板",     "dir": "/var/www/quant"}
+  ]
 }

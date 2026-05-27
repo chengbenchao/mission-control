@@ -57,121 +57,6 @@ body::before {
 }
 
 /* ═══════════════════════════════════════
-   LOCK SCREEN — Minimal premium slider
-   ═══════════════════════════════════════ */
-#captcha-overlay {
-  position: fixed; inset: 0; z-index: 99999;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--bg);
-  background-image:
-    radial-gradient(ellipse 50% 40% at 50% 50%, rgba(196,163,74,0.05) 0%, transparent 70%);
-}
-#captcha-overlay.hidden { display: none; }
-
-#captcha-box {
-  width: 400px; max-width: 92vw;
-  background: linear-gradient(180deg, rgba(14,17,26,0.95), rgba(14,17,26,0.85));
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(196,163,74,0.1);
-  border-radius: 20px;
-  padding: 48px 40px 40px;
-  text-align: center;
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 24px 64px rgba(0,0,0,.6), 0 0 120px rgba(196,163,74,0.03);
-  animation: boxIn .5s cubic-bezier(.22,.61,.36,1);
-}
-@keyframes boxIn {
-  from { opacity:0; transform: translateY(20px) scale(.97); }
-  to   { opacity:1; transform: translateY(0) scale(1); }
-}
-
-#captcha-box .shield {
-  width: 48px; height: 48px; margin: 0 auto 24px;
-  position: relative;
-}
-#captcha-box .shield svg {
-  width: 48px; height: 48px;
-  fill: none; stroke: var(--gold); stroke-width: 1.5;
-  stroke-linecap: round; stroke-linejoin: round;
-}
-#captcha-box h2 {
-  font-family: var(--font-body);
-  font-size: 1.1rem; font-weight: 500;
-  color: var(--text);
-  letter-spacing: -0.2px;
-  margin-bottom: 4px;
-}
-#captcha-box .sub {
-  font-size: .75rem; color: var(--text-3);
-  letter-spacing: 0.5px;
-  margin-bottom: 32px;
-}
-
-/* ── Slider ── */
-#captcha-slider {
-  position: relative;
-  width: 100%; height: 44px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 22px;
-  overflow: hidden;
-  user-select: none;
-  -webkit-user-select: none;
-}
-#captcha-fill {
-  position: absolute; left: 0; top: 0;
-  height: 100%; width: 0;
-  background: linear-gradient(90deg, rgba(196,163,74,0.08), rgba(196,163,74,0.2));
-  border-radius: 22px;
-}
-#captcha-knob {
-  position: absolute; left: 2px; top: 2px;
-  width: 40px; height: 40px;
-  background: linear-gradient(135deg, #d4b96a, #b8943a);
-  border-radius: 50%;
-  cursor: grab; z-index: 2;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.15);
-  transition: transform .15s;
-}
-#captcha-knob:active { cursor: grabbing; transform: scale(1.05); }
-#captcha-knob svg { width: 16px; height: 16px; }
-#captcha-knob svg path { stroke: rgba(0,0,0,.4); stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-
-#captcha-hint {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: .75rem; color: rgba(255,255,255,0.12);
-  letter-spacing: 3px; font-weight: 400;
-  pointer-events: none; z-index: 1;
-}
-
-#captcha-slider.done #captcha-fill {
-  width: 100% !important;
-  background: rgba(63,185,80,0.08);
-  transition: width .3s ease, background .5s ease;
-}
-#captcha-slider.done #captcha-knob {
-  left: auto !important; right: 2px;
-  background: linear-gradient(135deg, #4ae06a, #2da44e);
-  transition: left .3s ease;
-}
-#captcha-slider.done #captcha-hint { opacity: 0; transition: opacity .3s; }
-
-#captcha-status {
-  font-size: .7rem; margin-top: 16px; height: 18px;
-  letter-spacing: 0.5px; color: var(--text-3);
-}
-
-/* shake */
-#captcha-box.shake { animation: boxIn .5s cubic-bezier(.22,.61,.36,1), shake .4s ease .1s; }
-@keyframes shake {
-  0%,100%{transform:translateX(0)}
-  25%{transform:translateX(-6px)}
-  50%{transform:translateX(6px)}
-  75%{transform:translateX(-4px)}
-}
-
-/* ═══════════════════════════════════════
    DASHBOARD
    ═══════════════════════════════════════ */
 .container { max-width: 1160px; margin: 0 auto; padding: 0 32px; position: relative; z-index: 1; }
@@ -227,6 +112,27 @@ a.svc-name:hover { color:var(--gold); }
 .svc-body { display:flex; align-items:center; gap:16px; font-family:var(--font-mono); font-size:11px; color:var(--text-3); letter-spacing:0.5px; position:relative; z-index:1; }
 .svc-body .key { color:var(--text-3); margin-right:3px; }
 .svc-body .val { color:var(--text-2); font-weight:500; }
+.svc-body .val.muted { color:var(--text-3); }
+.svc-body .port-badge { color:var(--cyan); font-weight:600; }
+.svc-body--static { flex-direction:column; align-items:flex-start; gap:4px; }
+.svc-desc { font-family:var(--font-body); font-size:11px; color:var(--text-3); }
+.svc-dir {
+  font-family:var(--font-mono); font-size:10px; color:var(--text-3);
+  background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06);
+  border-radius:4px; padding:2px 6px;
+  max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.svc-url-row { margin-top:4px; position:relative; z-index:1; }
+.svc-full-url {
+  display:inline-block; font-family:var(--font-mono); font-size:10px;
+  color:var(--gold); text-decoration:none; letter-spacing:0.02em;
+  background:rgba(196,163,74,0.08); border:1px solid rgba(196,163,74,0.18);
+  border-radius:4px; padding:2px 7px;
+  max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  transition:background .15s, color .15s;
+}
+.svc-full-url:hover { background:rgba(196,163,74,0.16); color:var(--gold-bright); }
+.svc-desc { font-family:var(--font-body); font-size:11px; color:var(--text-2); }
 .svc-actions { display:flex; gap:6px; position:relative; z-index:1; }
 .svc-actions button { font-family:var(--font-body); font-size:10px; font-weight:500; padding:5px 12px; border-radius:100px; cursor:pointer; border:1px solid var(--border); background:transparent; letter-spacing:0.5px; transition:all .15s; color:var(--text-3); }
 .svc-actions button:hover { border-color:var(--text-2); color:var(--text); background:rgba(255,255,255,0.03); }
@@ -265,33 +171,11 @@ a.svc-name:hover { color:var(--gold); }
 .empty-state,.error-state { padding:40px 24px; text-align:center; color:var(--text-3); font-size:13px; }
 .error-state { color:var(--red); }
 
-@media(max-width:860px){ body{padding:24px 0 60px} .container{padding:0 16px} .stats{grid-template-columns:1fr 1fr; gap:8px} .svc-grid{grid-template-columns:1fr} .header{flex-direction:column; align-items:flex-start; gap:12px} .header h1{font-size:26px} #captcha-box{padding:36px 24px} }
+@media(max-width:860px){ body{padding:24px 0 60px} .container{padding:0 16px} .stats{grid-template-columns:1fr 1fr; gap:8px} .svc-grid{grid-template-columns:1fr} .header{flex-direction:column; align-items:flex-start; gap:12px} .header h1{font-size:26px} }
 @media(max-width:480px){ .stats{grid-template-columns:1fr} .stat .val{font-size:24px} .svc-body{flex-wrap:wrap; gap:8px} }
 </style>
 </head>
 <body>
-
-<!-- ═══════════════════  LOCK SCREEN  ═══════════════════ -->
-<div id="captcha-overlay">
-<div id="captcha-box">
-  <div class="shield">
-    <svg viewBox="0 0 48 48">
-      <path d="M24 4L6 12v14c0 12 8 16 18 20 10-4 18-8 18-20V12L24 4z"/>
-      <path d="M16 24l5 5 11-11"/>
-    </svg>
-  </div>
-  <h2>身份验证</h2>
-  <p class="sub">拖动滑块完成人机验证</p>
-  <div id="captcha-slider">
-    <div id="captcha-fill"></div>
-    <div id="captcha-knob">
-      <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-    </div>
-    <div id="captcha-hint">滑动完成验证</div>
-  </div>
-  <div id="captcha-status"></div>
-</div>
-</div>
 
 <!-- ═══════════════════  DASHBOARD ═══════════════════ -->
 <div class="container">
@@ -322,59 +206,6 @@ a.svc-name:hover { color:var(--gold); }
 <div class="toast-root" id="toastRoot"></div>
 
 <script>
-/* ═══════════════════  SLIDER CAPTCHA  ═══════════════════ */
-(function(){
-  if (sessionStorage.getItem('_mc_lock')) {
-    document.getElementById('captcha-overlay').classList.add('hidden');
-    return;
-  }
-  const slider = document.getElementById('captcha-slider'),
-        knob   = document.getElementById('captcha-knob'),
-        fill   = document.getElementById('captcha-fill'),
-        status = document.getElementById('captcha-status'),
-        box    = document.getElementById('captcha-box');
-
-  let down = false, sx = 0, kl = 0;
-  const maxL = () => slider.clientWidth - knob.clientWidth - 4;
-
-  knob.addEventListener('mousedown', e => { down=true; sx=e.clientX; kl=knob.offsetLeft; e.preventDefault(); });
-  knob.addEventListener('touchstart', e => { down=true; sx=e.touches[0].clientX; kl=knob.offsetLeft; e.preventDefault(); }, {passive:false});
-
-  document.addEventListener('mousemove', e => {
-    if(!down) return;
-    let l = kl + (e.clientX - sx);
-    l = Math.max(2, Math.min(l, maxL()));
-    knob.style.left = l + 'px';
-    fill.style.width = (l + 20) + 'px';
-  });
-  document.addEventListener('touchmove', e => {
-    if(!down) return;
-    let l = kl + (e.touches[0].clientX - sx);
-    l = Math.max(2, Math.min(l, maxL()));
-    knob.style.left = l + 'px';
-    fill.style.width = (l + 20) + 'px';
-  }, {passive:false});
-
-  function release() {
-    if(!down) return; down = false;
-    if(knob.offsetLeft >= maxL() - 4) {
-      slider.classList.add('done');
-      status.textContent = '✓ 验证通过';
-      status.style.color = 'var(--green)';
-      sessionStorage.setItem('_mc_lock', '1');
-      setTimeout(() => document.getElementById('captcha-overlay').classList.add('hidden'), 500);
-    } else {
-      knob.style.left = '2px'; fill.style.width = '0';
-      status.textContent = '请滑动到最右侧';
-      status.style.color = 'var(--red)';
-      box.classList.add('shake');
-      setTimeout(() => box.classList.remove('shake'), 500);
-    }
-  }
-  document.addEventListener('mouseup', release);
-  document.addEventListener('touchend', release);
-})();
-
 /* ═══════════════════  DASHBOARD  ═══════════════════ */
 const API = window.location.pathname.startsWith('/manage') ? '/manage' : '';
 async function fetchJSON(url) { const r = await fetch(url); return r.json(); }
@@ -415,18 +246,64 @@ function renderServices(svcs) {
   });
 }
 
-function cardHTML(s) {
-  const cls = s.status==='healthy'?'ok':s.status==='error'?'err':'warn';
-  const nameEl = s.url ? `<a href="${s.url}" class="svc-name" target="_blank" onclick="event.stopPropagation()">${s.name}</a>` : `<span class="svc-name">${s.name}</span>`;
-  const ctl = s.type==='systemd' ? `<div class="svc-actions" onclick="event.stopPropagation()"><button onclick="showLogs('${s.name}')">日志</button><button class="restart" onclick="restartSvc('${s.name}')">重启</button><button class="stop" onclick="stopSvc('${s.name}')">停止</button></div>` : '';
-  return `<div class="svc-card ${cls}" onclick="showLogs('${s.name}')"><div class="svc-top"><div class="svc-dot"></div>${nameEl}</div><div class="svc-body"><span><span class="key">PID</span> <span class="val">${s.pid||'—'}</span></span><span><span class="key">端口</span> <span class="val">${s.port||'—'}</span></span><span><span class="key">内存</span> <span class="val">${fmtMB(s.memory)}</span></span></div>${ctl}</div>`;
+function esc(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-function showLogs(name) {
+function cardHTML(s) {
+  const cls = s.status==='healthy'?'ok':s.status==='error'?'err':'warn';
+  const safeName  = esc(s.name);
+  const linkUrl   = s.full_url ? esc(s.full_url) : (s.url ? esc(s.url) : '');
+  const nameEl = linkUrl
+    ? `<a href="${linkUrl}" class="svc-name" target="_blank" rel="noopener" onclick="event.stopPropagation()">${safeName}</a>`
+    : `<span class="svc-name">${safeName}</span>`;
+  const ctl = s.type==='systemd'
+    ? `<div class="svc-actions" onclick="event.stopPropagation()">
+        <button onclick="showLogs(this)" data-svc="${safeName}">日志</button>
+        <button class="restart" onclick="restartSvc(this)" data-svc="${safeName}">重启</button>
+        <button class="stop" onclick="stopSvc(this)" data-svc="${safeName}">停止</button>
+       </div>`
+    : '';
+
+  // Full URL badge (shown when full_url exists)
+  const urlBadge = s.full_url
+    ? `<a class="svc-full-url" href="${esc(s.full_url)}" target="_blank" rel="noopener"
+          onclick="event.stopPropagation()" title="${esc(s.full_url)}">${esc(s.full_url)}</a>`
+    : '';
+
+  let body;
+  if (s.type === 'static') {
+    const safeDesc = esc(s.desc || '静态站点');
+    const dirPart  = s.dir ? `<span class="svc-dir" title="${esc(s.dir)}">${esc(s.dir)}</span>` : '';
+    body = `<div class="svc-body svc-body--static">
+              <span class="svc-desc">${safeDesc}</span>
+              ${dirPart}
+              ${urlBadge}
+            </div>`;
+  } else {
+    const portPart = s.port
+      ? `<span><span class="key">端口</span> <span class="val port-badge">:${esc(s.port)}</span></span>`
+      : `<span><span class="key">端口</span> <span class="val muted">—</span></span>`;
+    body = `<div class="svc-body">
+              <span><span class="key">PID</span> <span class="val">${esc(s.pid||'—')}</span></span>
+              ${portPart}
+              <span><span class="key">内存</span> <span class="val">${fmtMB(s.memory)}</span></span>
+            </div>
+            ${urlBadge ? `<div class="svc-url-row">${urlBadge}</div>` : ''}`;
+  }
+  return `<div class="svc-card ${cls}"><div class="svc-top"><div class="svc-dot"></div>${nameEl}</div>${body}${ctl}</div>`;
+}
+
+function showLogs(btn) {
+  const name = btn.dataset.svc;
   const m = document.getElementById('modalOverlay'), c = document.getElementById('modalContent');
-  c.innerHTML = `<button class="close" onclick="closeModal()">✕</button><h3>${name} · 日志</h3><div class="loading"><div class="spinner"></div> 加载中...</div>`;
+  c.innerHTML = `<button class="close" onclick="closeModal()">✕</button><h3>${esc(name)} · 日志</h3><div class="loading"><div class="spinner"></div> 加载中...</div>`;
   m.classList.add('active');
-  fetch(`${API}/api/logs?svc=${encodeURIComponent(name)}`).then(r=>r.text()).then(t=>{c.innerHTML=`<button class="close" onclick="closeModal()">✕</button><h3>${name} · 日志</h3><pre>${t||'（无日志输出）'}</pre>`}).catch(()=>{c.innerHTML=`<button class="close" onclick="closeModal()">✕</button><h3>${name} · 日志</h3><div class="error-state">无法加载日志</div>`});
+  fetch(`${API}/api/logs?svc=${encodeURIComponent(name)}`).then(r=>r.text()).then(t=>{
+    c.innerHTML=`<button class="close" onclick="closeModal()">✕</button><h3>${esc(name)} · 日志</h3><pre>${esc(t||'（无日志输出）')}</pre>`;
+  }).catch(()=>{
+    c.innerHTML=`<button class="close" onclick="closeModal()">✕</button><h3>${esc(name)} · 日志</h3><div class="error-state">无法加载日志</div>`;
+  });
 }
 function closeModal() { document.getElementById('modalOverlay').classList.remove('active'); }
 async function ctlSvc(name, action) {
@@ -437,8 +314,8 @@ async function ctlSvc(name, action) {
   } catch(e) { toast('err', `操作失败`); }
   setTimeout(refresh, 1000);
 }
-function restartSvc(n){ctlSvc(n,'restart')}
-function stopSvc(n){ctlSvc(n,'stop')}
+function restartSvc(btn){ctlSvc(btn.dataset.svc,'restart')}
+function stopSvc(btn){ctlSvc(btn.dataset.svc,'stop')}
 function toast(type, text) {
   const r = document.getElementById('toastRoot'), e = document.createElement('div');
   e.className = `toast ${type}`; e.textContent = text;
