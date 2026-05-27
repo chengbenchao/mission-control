@@ -1,8 +1,55 @@
 {
   "_comment": "Mission Control 配置文件。base_url 留空则使用相对路径；infra_patterns 支持正则，命中的服务显示在「核心服务」区。",
   "base_url": "",
-  "infra_patterns": [],
-  "service_urls": {},
-  "service_ports": {},
-  "static_sites": []
+  "infra_patterns": ["nginx", "openclaw", "hermes-gateway"],
+  "service_urls": {
+    "mission-control":               "/manage/",
+    "model-switcher":                "/model/",
+    "investment-portfolio-analyzer": "/invest/",
+    "hermes-panel":                  "/hermes-panel/"
+  },
+  "service_ports": {
+    "mission-control":               8880,
+    "model-switcher":                8899,
+    "investment-portfolio-analyzer": 8002,
+    "hermes-panel":                  8890
+  },
+  "static_sites": [
+    {
+      "name":  "web3-explainer",
+      "url":   "/",
+      "desc":  "Web3 概念解析站",
+      "dir":   "/var/www/web3-explainer"
+    },
+    {
+      "name":  "quant-dashboard",
+      "url":   "/quant/",
+      "desc":  "量化交易仪表盘",
+      "dir":   "/var/www/quant"
+    },
+    {
+      "name":  "llm-concepts",
+      "url":   "/llm/",
+      "desc":  "LLM Concepts 100",
+      "dir":   "/var/www/llm"
+    },
+    {
+      "name":  "ai-news",
+      "url":   "/ai/",
+      "desc":  "AI 资讯",
+      "dir":   "/var/www/ai-news"
+    },
+    {
+      "name":  "ai-invest",
+      "url":   "/A/",
+      "desc":  "AI 投资工具",
+      "dir":   "/var/www/ai-invest"
+    },
+    {
+      "name":  "yacd-proxy",
+      "url":   "/proxy/",
+      "desc":  "代理控制面板（yacd）",
+      "dir":   "/opt/yacd"
+    }
+  ]
 }
